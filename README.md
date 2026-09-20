@@ -1,7 +1,7 @@
 # hub-phone
 
-**Let your hub make a phone call for you.** An add-on for the always-on server from
-*Teach It Once*, Chapter 30. You tell your assistant "call the restaurant and book a table
+**Let your hub make a phone call for you.** An add-on for the [always-on server](https://github.com/MichaelZelbel/teach-it-once-kit) from
+[*Teach It Once*](https://leanpub.com/teachitonce), Chapter 30. You tell your assistant "call the restaurant and book a table
 for two on Friday at seven"; a voice agent makes the call as *the AI assistant of you*, and
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
 declined, not reached, unclear.
