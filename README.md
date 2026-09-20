@@ -1,7 +1,7 @@
 # hub-phone
 
 **Let your hub make a phone call for you.** An add-on for the always-on server from
-*Teach It Once*, Chapter 31. You tell your assistant "call the restaurant and book a table
+*Teach It Once*, Chapter 30. You tell your assistant "call the restaurant and book a table
 for two on Friday at seven"; a voice agent makes the call as *the AI assistant of you*, and
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
 declined, not reached, unclear.
@@ -26,7 +26,7 @@ calls an emergency number, and the service refuses the sixth call of a day.
 
 ## What you need
 
-1. The server from Chapter 31: Ubuntu, Hermes as a system service, the `ai` account.
+1. The server from Chapter 30: Ubuntu, Hermes as a system service, the `ai` account.
 2. An ElevenLabs account and one restricted API key with a credit cap:
    [setup/1-elevenlabs.md](setup/1-elevenlabs.md).
 3. A Twilio account with a small balance, the identity check done, and your own mobile
@@ -91,6 +91,6 @@ confirm anything.
 
 This is the phone service of the author's own hub, with his name, number, ids and German
 prompt taken out and an English prompt put in that introduces itself as an assistant. The
-whole story is in *Teach It Once*, Chapter 33.
+whole story is in *Teach It Once*, Chapter 32.
 
 MIT. Use it, change it, share it.
