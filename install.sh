@@ -2,7 +2,7 @@
 # =============================================================================
 # hub-phone: let your hub make a phone call for you.
 #
-# An add-on for the server from Chapter 30 of "Teach It Once". Logged in as root
+# An add-on for the server from Chapter 32 of "Teach It Once". Logged in as root
 # on that server, paste this one line:
 #
 #   curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/hub-phone/main/install.sh | bash
@@ -61,7 +61,7 @@ fi
 eval "$LIB"
 unset LIB
 
-kb_is_root || die "Run this as root on your server (the machine from Chapter 30)."
+kb_is_root || die "Run this as root on your server (the machine from Chapter 32)."
 command -v systemctl >/dev/null 2>&1 || die "This needs systemd, which every Ubuntu server has. This machine does not."
 need_tools python3 curl tar
 
