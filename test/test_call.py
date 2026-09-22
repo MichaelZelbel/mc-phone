@@ -8,7 +8,7 @@ from unittest.mock import patch
 import _env
 import call as phone
 
-AGENT_OK = {'conversation_config': {'agent': {'first_message': '', 'prompt': {'prompt': 'x {{hub_call_brief}} y'}}}}
+AGENT_OK = {'conversation_config': {'agent': {'first_message': '', 'prompt': {'prompt': 'x {{godspeed_call_brief}} y'}}}}
 
 
 class ValidationTests(unittest.TestCase):
@@ -49,7 +49,7 @@ class ValidationTests(unittest.TestCase):
             phone.validate_job(self.job)
 
     def test_unknown_timezone_falls_back_to_utc(self):
-        with patch.dict(os.environ, {'HUB_PHONE_TIMEZONE': 'Mars/Olympus'}):
+        with patch.dict(os.environ, {'GODSPEED_PHONE_TIMEZONE': 'Mars/Olympus'}):
             self.assertEqual(str(phone.timezone()), 'UTC')
 
 
@@ -98,7 +98,7 @@ class DialTests(unittest.TestCase):
             api.assert_not_called()
 
     def test_unconfigured_service_cannot_dial(self):
-        with patch.dict(os.environ, {'HUB_PHONE_AGENT_ID': ''}), patch.object(phone, 'api') as api:
+        with patch.dict(os.environ, {'GODSPEED_PHONE_AGENT_ID': ''}), patch.object(phone, 'api') as api:
             with self.assertRaisesRegex(ValueError, 'setup'):
                 phone.call(self.job, phone.fingerprint(self.job))
             api.assert_not_called()
@@ -128,7 +128,7 @@ class DialTests(unittest.TestCase):
         self.assertEqual(payload['to_number'], '+4917212345678')
         variables = payload['conversation_initiation_client_data']['dynamic_variables']
         self.assertEqual(variables['caller_name'], 'Sam Example')
-        self.assertEqual(json.loads(variables['hub_call_brief'])['time'], '19:00')
+        self.assertEqual(json.loads(variables['godspeed_call_brief'])['time'], '19:00')
 
     def test_provider_success_is_not_reservation_success(self):
         with patch.object(phone, 'api', return_value={'status': 'done', 'analysis': {'call_successful': 'success'}, 'transcript': []}):
@@ -165,7 +165,7 @@ class ApiTests(unittest.TestCase):
         config = phone.agent_config()['conversation_config']
         self.assertEqual(config['agent']['language'], 'en')
         self.assertEqual(config['agent']['first_message'], '')
-        self.assertIn('{{hub_call_brief}}', config['agent']['prompt']['prompt'])
+        self.assertIn('{{godspeed_call_brief}}', config['agent']['prompt']['prompt'])
         self.assertIn('{{caller_name}}', config['agent']['prompt']['prompt'])
         self.assertIn('AI assistant', config['agent']['prompt']['prompt'])
         self.assertEqual(config['conversation']['max_duration_seconds'], 180)

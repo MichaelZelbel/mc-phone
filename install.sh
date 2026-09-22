@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 # =============================================================================
-# hub-phone: let your hub make a phone call for you.
+# mc-phone: let your mission control make a phone call for you.
 #
 # An add-on for the server from Chapter 32 of "Teach It Once". Logged in as root
 # on that server, paste this one line:
 #
-#   curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/hub-phone/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/mc-phone/main/install.sh | bash
 #
 # It is safe to run twice: a second run updates the code and the agent's prompt
 # and keeps your settings. Nothing here deletes anything, and nothing here dials
 # a number unless you say yes to the rehearsal at the very end.
 #
 # What it does on its own:
-#   - puts the worker and the command on the machine (/opt/hub-phone,
-#     /usr/local/bin/hub-phone) and the worker on the machine's own clock as a
+#   - puts the worker and the command on the machine (/opt/mc-phone,
+#     /usr/local/bin/mc-phone) and the worker on the machine's own clock as a
 #     system service that starts with the machine
-#   - opens one socket for orders that only members of the hub-phone group may
+#   - opens one socket for orders that only members of the mc-phone group may
 #     use, and puts your assistant's account in that group; the account stays
 #     sandboxed and never escalates
-#   - creates the "Hub phone" agent in your ElevenLabs workspace from the prompt
+#   - creates the "Godspeed phone" agent in your ElevenLabs workspace from the prompt
 #     this version ships, or brings an existing one up to date
 #   - picks the phone number you imported into ElevenLabs
-#   - copies the phone-errands recipe into your hub's skills room
+#   - copies the phone-errands recipe into your mission control's skills room
 #   - proves the assistant's account can reach the service, the way the
 #     assistant will, not the way root can
 #
@@ -44,12 +44,12 @@ export KB_TAG
 # The pin is an immutable TAG of the shared installer floor, never a branch.
 KB_PIN="v2.7"
 LIB_URL="https://raw.githubusercontent.com/MichaelZelbel/kit-bootstrap/$KB_PIN/lib.sh"
-HP_TARBALL="${HP_TARBALL:-https://github.com/MichaelZelbel/hub-phone/archive/refs/heads/main.tar.gz}"
+HP_TARBALL="${HP_TARBALL:-https://github.com/MichaelZelbel/mc-phone/archive/refs/heads/main.tar.gz}"
 HP_SRC="${HP_SRC:-}"          # a local checkout, for tests and for running from a clone
 AI_USER="${AI_USER:-ai}"
-HUB="${HUB:-}"                # settled below: the assistant's home + /hub unless told otherwise
-CONF=/etc/hub-phone/config.env
-CRED=/etc/hub-phone/credentials.env
+GODSPEED="${GODSPEED:-}"                # settled below: the assistant's home + /godspeed unless told otherwise
+CONF=/etc/mc-phone/config.env
+CRED=/etc/mc-phone/credentials.env
 
 # --- The shared groundwork ----------------------------------------------------
 if ! LIB="$(curl -fsSL "$LIB_URL")" || [ -z "$LIB" ]; then
@@ -81,12 +81,12 @@ ask_secret() {   # $1 prompt -> stdout
 
 # Values are written in double quotes, which systemd's EnvironmentFile strips, so a name
 # with a space in it survives both systemd and a shell that sources the file.
-conf_get() { [ -f "$CONF" ] && sed -n "s/^HUB_PHONE_$1=//p" "$CONF" | tail -1 | sed -e 's/^"//' -e 's/"$//'; }
+conf_get() { [ -f "$CONF" ] && sed -n "s/^GODSPEED_PHONE_$1=//p" "$CONF" | tail -1 | sed -e 's/^"//' -e 's/"$//'; }
 conf_set() {   # $1 NAME  $2 value
-  mkdir -p /etc/hub-phone; chmod 700 /etc/hub-phone
+  mkdir -p /etc/mc-phone; chmod 700 /etc/mc-phone
   touch "$CONF"
-  sed -i "/^HUB_PHONE_$1=/d" "$CONF"
-  printf 'HUB_PHONE_%s="%s"\n' "$1" "$2" >> "$CONF"
+  sed -i "/^GODSPEED_PHONE_$1=/d" "$CONF"
+  printf 'GODSPEED_PHONE_%s="%s"\n' "$1" "$2" >> "$CONF"
   chmod 600 "$CONF"
 }
 
@@ -98,26 +98,26 @@ if [ -n "$HP_SRC" ] && [ -f "$HP_SRC/service/service.py" ]; then
   ok "using the checkout at $SRC"
 else
   if ! curl -fsSL "$HP_TARBALL" | tar -xz -C "$WORK"; then
-    die "Could not download hub-phone from $HP_TARBALL. Check the machine has internet, then run this again."
+    die "Could not download mc-phone from $HP_TARBALL. Check the machine has internet, then run this again."
   fi
   SRC="$(find "$WORK" -maxdepth 1 -mindepth 1 -type d | head -1)"
-  [ -f "$SRC/service/service.py" ] || die "The download did not contain hub-phone. Nothing was installed."
+  [ -f "$SRC/service/service.py" ] || die "The download did not contain mc-phone. Nothing was installed."
 fi
-install -d -m 755 /opt/hub-phone
-install -d -m 700 /var/lib/hub-phone
+install -d -m 755 /opt/mc-phone
+install -d -m 700 /var/lib/mc-phone
 for f in service.py call.py client.py setup.py prompt.txt; do
-  install -m 644 "$SRC/service/$f" "/opt/hub-phone/$f"
+  install -m 644 "$SRC/service/$f" "/opt/mc-phone/$f"
 done
-cat > /usr/local/bin/hub-phone <<'SH'
+cat > /usr/local/bin/mc-phone <<'SH'
 #!/bin/sh
-exec /usr/bin/python3 -I /opt/hub-phone/client.py "$@"
+exec /usr/bin/python3 -I /opt/mc-phone/client.py "$@"
 SH
-chmod 755 /usr/local/bin/hub-phone
-ok "code in /opt/hub-phone, command at /usr/local/bin/hub-phone"
+chmod 755 /usr/local/bin/mc-phone
+ok "code in /opt/mc-phone, command at /usr/local/bin/mc-phone"
 
 # --- 2. Your settings ----------------------------------------------------------
 say "Your settings"
-mkdir -p /etc/hub-phone; chmod 700 /etc/hub-phone
+mkdir -p /etc/mc-phone; chmod 700 /etc/mc-phone
 if [ -s "$CRED" ] && grep -q '^ELEVENLABS_API_KEY=.' "$CRED"; then
   ok "the ElevenLabs key is already on this machine (kept; delete $CRED to enter a new one)"
 else
@@ -163,51 +163,51 @@ ok "settings in $CONF"
 
 # --- 3. The service -------------------------------------------------------------
 say "The service"
-getent group hub-phone >/dev/null || groupadd --system hub-phone
+getent group mc-phone >/dev/null || groupadd --system mc-phone
 JOINED=no
 if id "$AI_USER" >/dev/null 2>&1; then
-  if ! id -nG "$AI_USER" | tr ' ' '\n' | grep -qx hub-phone; then
-    usermod -aG hub-phone "$AI_USER"
+  if ! id -nG "$AI_USER" | tr ' ' '\n' | grep -qx mc-phone; then
+    usermod -aG mc-phone "$AI_USER"
     JOINED=yes
   fi
-  ok "account $AI_USER may place orders (member of hub-phone)"
+  ok "account $AI_USER may place orders (member of mc-phone)"
 else
   warn "there is no account called $AI_USER on this machine. The service is installed, but no
-     account may place an order yet. Add one with: usermod -aG hub-phone <account>"
+     account may place an order yet. Add one with: usermod -aG mc-phone <account>"
 fi
-for unit in hub-phone.service hub-phone-rpc.socket hub-phone-rpc@.service; do
+for unit in mc-phone.service mc-phone-rpc.socket mc-phone-rpc@.service; do
   install -m 644 "$SRC/service/$unit" "/etc/systemd/system/$unit"
 done
 systemctl daemon-reload
-systemctl enable --now hub-phone-rpc.socket >/dev/null 2>&1 || die "The socket unit did not start: systemctl status hub-phone-rpc.socket"
-systemctl enable hub-phone.service >/dev/null 2>&1
-systemctl restart hub-phone.service || die "The worker did not start: journalctl -u hub-phone -n 20"
-ok "worker running as a system service; socket open at /run/hub-phone-rpc.sock"
+systemctl enable --now mc-phone-rpc.socket >/dev/null 2>&1 || die "The socket unit did not start: systemctl status mc-phone-rpc.socket"
+systemctl enable mc-phone.service >/dev/null 2>&1
+systemctl restart mc-phone.service || die "The worker did not start: journalctl -u mc-phone -n 20"
+ok "worker running as a system service; socket open at /run/mc-phone-rpc.sock"
 
 # A process carries the groups it had when it STARTED. If the assistant's gateway
 # was already running, it cannot open the socket until it restarts.
 if [ "$JOINED" = yes ]; then
-  for gw in hermes-gateway hermes-gateway-hub; do
+  for gw in hermes-gateway hermes-gateway-godspeed; do
     if systemctl is-active --quiet "$gw.service" 2>/dev/null; then
-      systemctl restart "$gw.service" && ok "$AI_USER joined hub-phone; restarted $gw so it carries the new group"
+      systemctl restart "$gw.service" && ok "$AI_USER joined mc-phone; restarted $gw so it carries the new group"
     fi
   done
 fi
 
 # --- 4. The agent and the number ---------------------------------------------
 say "The agent in your ElevenLabs workspace"
-AGENT_OUT="$(hub-phone setup agent --write 2>&1)"
+AGENT_OUT="$(mc-phone setup agent --write 2>&1)"
 if printf '%s' "$AGENT_OUT" | grep -q '"agent_id"'; then
   AGENT_ID="$(printf '%s' "$AGENT_OUT" | sed -n 's/.*"agent_id": *"\([^"]*\)".*/\1/p' | head -1)"
   STATUS="$(printf '%s' "$AGENT_OUT" | sed -n 's/.*"status": *"\([^"]*\)".*/\1/p' | head -1)"
-  ok "agent \"Hub phone\" $STATUS ($AGENT_ID). Pick its voice in the ElevenLabs page if you like; everything else is set."
+  ok "agent \"Godspeed phone\" $STATUS ($AGENT_ID). Pick its voice in the ElevenLabs page if you like; everything else is set."
 else
   warn "could not create or update the agent. ElevenLabs said:
      $AGENT_OUT
      The key may lack the agents permission (setup/1-elevenlabs.md). Fix it and run this again."
 fi
 
-NUMBERS_OUT="$(hub-phone setup numbers 2>&1)"
+NUMBERS_OUT="$(mc-phone setup numbers 2>&1)"
 COUNT="$(printf '%s' "$NUMBERS_OUT" | grep -c '"phone_number_id"')"
 if [ "$COUNT" -eq 0 ]; then
   warn "no phone number is imported into ElevenLabs yet, so no call can go out.
@@ -221,35 +221,35 @@ else
   NUM_ID="$(ask "Several numbers are imported. Paste the phone_number_id to call from" "$(conf_get NUMBER_ID)")"
   [ -n "$NUM_ID" ] && conf_set NUMBER_ID "$NUM_ID" && ok "calls go out from $NUM_ID"
 fi
-systemctl restart hub-phone.service   # the worker reads config.env at start
+systemctl restart mc-phone.service   # the worker reads config.env at start
 
-# --- 5. The recipe in your hub --------------------------------------------------
-say "The recipe in your hub"
+# --- 5. The recipe in your mission control --------------------------------------------------
+say "The recipe in your mission control"
 if id "$AI_USER" >/dev/null 2>&1; then
   AI_HOME="$(getent passwd "$AI_USER" | cut -d: -f6)"
-  HUB="${HUB:-$AI_HOME/hub}"
+  GODSPEED="${GODSPEED:-$AI_HOME/godspeed}"
 fi
-if [ -n "$HUB" ] && [ -d "$HUB" ]; then
-  ROOM="$(kb_skills_room "$HUB")"
+if [ -n "$GODSPEED" ] && [ -d "$GODSPEED" ]; then
+  ROOM="$(kb_skills_room "$GODSPEED")"
   install -d -m 755 "$ROOM/phone-errands/templates"
   install -m 644 "$SRC/skill/phone-errands/SKILL.md" "$ROOM/phone-errands/SKILL.md"
   install -m 644 "$SRC/skill/phone-errands/templates/reservation-order.json" "$ROOM/phone-errands/templates/reservation-order.json"
   chown -R "$AI_USER":"$AI_USER" "$ROOM/phone-errands"
-  if [ -d "$HUB/.git" ]; then
-    su - "$AI_USER" -c "cd '$HUB' && git add skills/phone-errands 2>/dev/null; git add '$ROOM/phone-errands' 2>/dev/null; git -c user.name='hub-phone' -c user.email='hub-phone@localhost' commit -q -m 'Add the phone-errands recipe (hub-phone)' >/dev/null 2>&1" || true
+  if [ -d "$GODSPEED/.git" ]; then
+    su - "$AI_USER" -c "cd '$GODSPEED' && git add skills/phone-errands 2>/dev/null; git add '$ROOM/phone-errands' 2>/dev/null; git -c user.name='mc-phone' -c user.email='mc-phone@localhost' commit -q -m 'Add the phone-errands recipe (mc-phone)' >/dev/null 2>&1" || true
   fi
   ok "phone-errands recipe in $ROOM/phone-errands (your assistant reads that room)"
 else
-  warn "no hub folder found at ${HUB:-<unknown>}. Copy skill/phone-errands/ into your hub's skills room by hand,
-     or run again with HUB=/path/to/hub."
+  warn "no mission control folder found at ${GODSPEED:-<unknown>}. Copy skill/phone-errands/ into your mission control's skills room by hand,
+     or run again with GODSPEED=/path/to/godspeed."
 fi
 
 # --- 6. Prove the assistant's path ---------------------------------------------
 say "Proof"
 if id "$AI_USER" >/dev/null 2>&1; then
-  PROOF="$(systemd-run --quiet --property=User="$AI_USER" --property=NoNewPrivileges=yes --pipe --wait /usr/local/bin/hub-phone health 2>&1)"
+  PROOF="$(systemd-run --quiet --property=User="$AI_USER" --property=NoNewPrivileges=yes --pipe --wait /usr/local/bin/mc-phone health 2>&1)"
   if printf '%s' "$PROOF" | grep -q '"worker_recent": true'; then
-    ok "as $AI_USER, sandboxed, hub-phone health answers and the worker is alive"
+    ok "as $AI_USER, sandboxed, mc-phone health answers and the worker is alive"
   else
     warn "as $AI_USER the health check did not come back clean:
      $PROOF"
@@ -264,7 +264,7 @@ fi
 # --- 7. One rehearsal, only if you say so ----------------------------------------
 say "Rehearsal"
 if printf '%s' "${PROOF:-}" | grep -q '"configured": true' && ask_yes "Call your own number now for a one-minute rehearsal? You play the restaurant" "n"; then
-  JOB="/tmp/hub-phone-rehearsal-$(date +%Y%m%d-%H%M).json"
+  JOB="/tmp/mc-phone-rehearsal-$(date +%Y%m%d-%H%M).json"
   DATE="$(date -d '+7 days' +%F 2>/dev/null || python3 -c 'import datetime;print((datetime.date.today()+datetime.timedelta(days=7)).isoformat())')"
   cat > "$JOB" <<JSON
 {
@@ -282,12 +282,12 @@ if printf '%s' "${PROOF:-}" | grep -q '"configured": true' && ask_yes "Call your
 }
 JSON
   chmod 644 "$JOB"
-  SUB="$(su - "$AI_USER" -c "hub-phone submit '$JOB' --authorization 'Rehearsal call requested during install' --source 'install.sh'" 2>&1)"
+  SUB="$(su - "$AI_USER" -c "mc-phone submit '$JOB' --authorization 'Rehearsal call requested during install' --source 'install.sh'" 2>&1)"
   JOB_ID="$(printf '%s' "$SUB" | sed -n 's/.*"job_id": *"\([^"]*\)".*/\1/p' | head -1)"
   if [ -n "$JOB_ID" ]; then
     log "Your phone will ring within a few seconds. Answer as a restaurant would. The call ends by itself."
     for i in 1 2 3 4; do
-      RES="$(su - "$AI_USER" -c "hub-phone wait '$JOB_ID' --seconds 55" 2>&1)"
+      RES="$(su - "$AI_USER" -c "mc-phone wait '$JOB_ID' --seconds 55" 2>&1)"
       printf '%s' "$RES" | grep -q '"status": "finished"' && break
     done
     echo "$RES"

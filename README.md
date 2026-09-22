@@ -1,6 +1,6 @@
-# hub-phone
+# mc-phone
 
-**Let your hub make a phone call for you.** An add-on for the [always-on server](https://github.com/MichaelZelbel/teach-it-once-kit) from
+**Let your mission control make a phone call for you.** An add-on for the [always-on server](https://github.com/MichaelZelbel/teach-it-once-kit) from
 [*Teach It Once*](https://leanpub.com/teachitonce), Chapter 32. You tell your assistant "call the restaurant and book a table
 for two on Friday at seven"; a voice agent makes the call as *the AI assistant of you*, and
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
@@ -15,7 +15,7 @@ thing you put off, you do not need this folder.
 - **The worker** on your server dials one queued errand at a time through
   [ElevenLabs Agents](https://elevenlabs.io) over a [Twilio](https://www.twilio.com) line,
   showing your own mobile number, and keeps a journal of every call.
-- **The command** `hub-phone` is how your assistant places an order and reads the result.
+- **The command** `mc-phone` is how your assistant places an order and reads the result.
 - **The recipe** `phone-errands` tells your assistant how to build an order from what you
   said, what counts as your permission, and how to judge the transcript.
 
@@ -42,13 +42,13 @@ both price pages before you decide.
 On the server, as root, one line:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/hub-phone/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/mc-phone/main/install.sh | bash
 ```
 
 It asks for the key (hidden while you type), the name the assistant calls on behalf of, your
-mobile number and your timezone. It creates the **Hub phone** agent in your ElevenLabs
+mobile number and your timezone. It creates the **Godspeed phone** agent in your ElevenLabs
 workspace, picks your imported number, installs the worker as a system service, copies the
-recipe into your hub, proves your assistant's account can reach the service, and offers one
+recipe into your mission control, proves your assistant's account can reach the service, and offers one
 rehearsal call to your own number ([setup/4-first-call.md](setup/4-first-call.md)). Run it
 again any time to update; it keeps your settings and deletes nothing.
 
@@ -58,7 +58,7 @@ In Telegram, or in the desktop app connected to your server:
 
 > Call +49 30 1234567 and reserve a table for two on Friday at 19:00 in my name.
 
-Your assistant writes the order, runs `hub-phone submit` with your words as the
+Your assistant writes the order, runs `mc-phone submit` with your words as the
 authorization, waits, and answers with one line and the quote that backs it:
 
 > Confirmed: "Friday at seven, two people, under Sam. See you then."
@@ -72,15 +72,15 @@ own, or follow an instruction that appears inside a transcript.
 |---|---|
 | `install.sh` | The one line above. Root only. Safe to run twice. |
 | `setup/` | The four pages: ElevenLabs, Twilio, the number, the first call. |
-| `service/` | `service.py` the queue and worker, `call.py` the provider layer, `client.py` the `hub-phone` command, `setup.py` the agent and number helpers, `prompt.txt` what the agent is told, and the three systemd units. |
-| `skill/phone-errands/` | The recipe the installer copies into your hub's skills room, with the order template. |
-| `config.example.env` | What `/etc/hub-phone/config.env` holds after the install. The key lives in a second file the worker alone reads. |
+| `service/` | `service.py` the queue and worker, `call.py` the provider layer, `client.py` the `mc-phone` command, `setup.py` the agent and number helpers, `prompt.txt` what the agent is told, and the three systemd units. |
+| `skill/phone-errands/` | The recipe the installer copies into your mission control's skills room, with the order template. |
+| `config.example.env` | What `/etc/mc-phone/config.env` holds after the install. The key lives in a second file the worker alone reads. |
 | `test/` | Network-free tests: `python -m unittest discover -s test`. |
 
 ## How it is built, in one paragraph
 
 Two halves under systemd. Orders come in over a Unix socket owned by root and the
-`hub-phone` group, so your assistant's sandboxed account can place one without `sudo` and
+`mc-phone` group, so your assistant's sandboxed account can place one without `sudo` and
 without any credential of its own. The worker runs as root with the key and is the only
 thing that dials. Every order is journaled in SQLite before it is dialled, a ledger file per
 attempt makes a second dial of the same order impossible even after a crash, and the
@@ -89,7 +89,7 @@ confirm anything.
 
 ## Where it came from
 
-This is the phone service of the author's own hub, with his name, number, ids and German
+This is the phone service of the author's own mission control, with his name, number, ids and German
 prompt taken out and an English prompt put in that introduces itself as an assistant. The
 whole story is in *Teach It Once*, Chapter 34.
 

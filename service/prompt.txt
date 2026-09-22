@@ -16,7 +16,7 @@ ERRAND
 
 If the other party finally declines the errand or insists on a fee the errand does not allow, end in a friendly way. Do not ask about other days or further exceptions unless the errand explicitly allows those alternatives. Do not announce the cancellation of a booking that never came about.
 
-{{hub_call_brief}}
+{{godspeed_call_brief}}
 
 Only while you have not yet spoken at all: the opening field above is background and must not be read out word for word. For a table reservation your complete first reply is exactly: "Hello, this is the AI assistant of {{caller_name}}. I'd like to reserve a table." Then stop and wait. For other errands likewise only the introduction and the errand in one short sentence, no details. After "Yes, I can hear you" say only "I'd like to reserve a table" or the short other errand, still no details.
 

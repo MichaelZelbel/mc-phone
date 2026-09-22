@@ -1,6 +1,6 @@
-"""Setup helpers, run as root by install.sh or by `hub-phone setup ...`. None of them dials.
+"""Setup helpers, run as root by install.sh or by `mc-phone setup ...`. None of them dials.
 
-  agent    create the "Hub phone" agent in your ElevenLabs workspace, or bring an existing one
+  agent    create the "Godspeed phone" agent in your ElevenLabs workspace, or bring an existing one
            up to the prompt and settings this version ships; prints its id
   numbers  list the phone numbers imported into ElevenLabs (ids and the last digits)
   check    read-only proof that the key works and what the account holds
@@ -11,7 +11,7 @@ import urllib.parse
 
 import call as phone
 
-CONFIG_FILE = '/etc/hub-phone/config.env'
+CONFIG_FILE = '/etc/mc-phone/config.env'
 
 
 def list_agents():
@@ -54,7 +54,7 @@ def setup_agent():
         phone.api('agents/' + agent_id, 'PATCH', config)
         status = 'updated'
     else:
-        created = phone.api('agents/create', 'POST', dict(config, name=phone.AGENT_NAME, tags=['hub-phone']))
+        created = phone.api('agents/create', 'POST', dict(config, name=phone.AGENT_NAME, tags=['mc-phone']))
         agent_id = created.get('agent_id')
         if not isinstance(agent_id, str) or not agent_id:
             raise RuntimeError('ElevenLabs did not confirm the new agent. Look at the agent list before trying again.')
@@ -79,13 +79,13 @@ def check():
     agents = list_agents()
     numbers = list_numbers()['numbers']
     return {'status': 'ok', 'agents': len(agents),
-            'hub_phone_agent': phone.setting('AGENT_ID') or find_agent(),
+            'mc_phone_agent': phone.setting('AGENT_ID') or find_agent(),
             'numbers': len(numbers), 'configured_number': phone.setting('NUMBER_ID')}
 
 
 def write_setting(name, value, path=CONFIG_FILE):
-    """Replace or add one HUB_PHONE_ line in the config file. The file is root's, mode 0600."""
-    key = 'HUB_PHONE_' + name
+    """Replace or add one GODSPEED_PHONE_ line in the config file. The file is root's, mode 0600."""
+    key = 'GODSPEED_PHONE_' + name
     lines = []
     if os.path.exists(path):
         with open(path, encoding='utf-8') as f:

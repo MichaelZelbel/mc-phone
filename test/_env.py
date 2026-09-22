@@ -8,12 +8,12 @@ SERVICE = Path(__file__).resolve().parent.parent / 'service'
 sys.path.insert(0, str(SERVICE))
 
 CONFIG = {
-    'HUB_PHONE_CALLER_NAME': 'Sam Example',
-    'HUB_PHONE_OWN_NUMBER': '+4917212345678',
-    'HUB_PHONE_TIMEZONE': 'Europe/Berlin',
-    'HUB_PHONE_AGENT_ID': 'agent_test',
-    'HUB_PHONE_NUMBER_ID': 'phnum_test',
-    'HUB_PHONE_DAILY_LIMIT': '5',
+    'GODSPEED_PHONE_CALLER_NAME': 'Sam Example',
+    'GODSPEED_PHONE_OWN_NUMBER': '+4917212345678',
+    'GODSPEED_PHONE_TIMEZONE': 'Europe/Berlin',
+    'GODSPEED_PHONE_AGENT_ID': 'agent_test',
+    'GODSPEED_PHONE_NUMBER_ID': 'phnum_test',
+    'GODSPEED_PHONE_DAILY_LIMIT': '5',
 }
 os.environ.update(CONFIG)
 os.environ.pop('ELEVENLABS_API_KEY', None)

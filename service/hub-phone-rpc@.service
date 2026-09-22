@@ -1,10 +1,10 @@
 [Unit]
-Description=hub-phone RPC (one connection)
+Description=mc-phone RPC (one connection)
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/hub-phone/config.env
-ExecStart=/usr/bin/python3 -I /opt/hub-phone/service.py
+EnvironmentFile=/etc/mc-phone/config.env
+ExecStart=/usr/bin/python3 -I /opt/mc-phone/service.py
 StandardInput=socket
 StandardOutput=socket
 # Never the socket: the reply is exactly one JSON object on stdout, and a Python warning

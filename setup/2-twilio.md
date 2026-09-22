@@ -39,4 +39,4 @@ reaches you and nobody has to buy a second number.
 
 From the console's home page, note your **Account SID** and **Auth Token** (the token is
 hidden behind a *show* button). You will paste both into ElevenLabs on the next page, and
-nowhere else. Neither goes into your hub or into the installer.
+nowhere else. Neither goes into your mission control or into the installer.

@@ -1,7 +1,7 @@
 """The provider layer: validate an errand, describe the agent, dial once, read the result.
 
 Every identity value (agent, number, caller name, own number, timezone) comes from the
-environment, which systemd fills from /etc/hub-phone/config.env. Nothing here belongs to
+environment, which systemd fills from /etc/mc-phone/config.env. Nothing here belongs to
 one person. The API key is read only inside api(), which only the dialling worker and the
 root-run setup reach; the half of the service a bot can talk to never sees it.
 """
@@ -16,18 +16,18 @@ import urllib.request
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent
-STATE = Path('/var/lib/hub-phone/attempts')
-AGENT_NAME = 'Hub phone'
+STATE = Path('/var/lib/mc-phone/attempts')
+AGENT_NAME = 'Godspeed phone'
 # Emergency lines in the countries the book's readers live in. No errand may dial one.
 BLOCKED = {'112', '110', '911', '999', '000', '111', '117', '118', '119', '15', '17', '18'}
 DYNAMIC_PLACEHOLDERS = {
-    'hub_call_brief': 'No errand was given. Agree to nothing; end the call politely.',
+    'godspeed_call_brief': 'No errand was given. Agree to nothing; end the call politely.',
     'caller_name': 'the person who set up this assistant',
 }
 
 
 def setting(name, default=None):
-    value = os.environ.get('HUB_PHONE_' + name, '').strip()
+    value = os.environ.get('GODSPEED_PHONE_' + name, '').strip()
     return value or default
 
 
@@ -50,7 +50,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def api(path, method='GET', payload=None, timeout=90):
     key = os.environ.get('ELEVENLABS_API_KEY', '').strip()
     if not key:
-        raise RuntimeError('ELEVENLABS_API_KEY is not set. On the server it lives in /etc/hub-phone/credentials.env.')
+        raise RuntimeError('ELEVENLABS_API_KEY is not set. On the server it lives in /etc/mc-phone/credentials.env.')
     req = urllib.request.Request('https://api.elevenlabs.io/v1/convai/' + path,
         data=None if payload is None else json.dumps(payload).encode(),
         headers={'xi-api-key': key, 'Content-Type': 'application/json'}, method=method)
@@ -80,7 +80,7 @@ def validate_job(job):
     if not re.fullmatch(r'\+[1-9]\d{6,14}', job['to_number']):
         raise ValueError('to_number must be the full international number, like +4930123456.')
     if job['mode'] == 'rehearsal' and job['to_number'] != setting('OWN_NUMBER'):
-        raise ValueError('A rehearsal may only call your own number (HUB_PHONE_OWN_NUMBER).')
+        raise ValueError('A rehearsal may only call your own number (GODSPEED_PHONE_OWN_NUMBER).')
     if job.get('date'):
         try:
             date = dt.date.fromisoformat(job['date'])
@@ -139,10 +139,10 @@ def call(job, approved):
         raise ValueError('The approval belongs to a different order.')
     agent, number = setting('AGENT_ID'), setting('NUMBER_ID')
     if not agent or not number:
-        raise ValueError('HUB_PHONE_AGENT_ID or HUB_PHONE_NUMBER_ID is not set. Run: hub-phone setup')
+        raise ValueError('GODSPEED_PHONE_AGENT_ID or GODSPEED_PHONE_NUMBER_ID is not set. Run: mc-phone setup')
     config = api('agents/' + agent)['conversation_config']
-    if config['agent']['first_message'] or '{{hub_call_brief}}' not in config['agent']['prompt']['prompt']:
-        raise ValueError('The agent is not the hub-phone one. Run: hub-phone setup agent')
+    if config['agent']['first_message'] or '{{godspeed_call_brief}}' not in config['agent']['prompt']['prompt']:
+        raise ValueError('The agent is not the mc-phone one. Run: mc-phone setup agent')
     STATE.mkdir(parents=True, exist_ok=True)
     ledger = STATE / (job['job_id'] + '.json')
     with ledger.open('x', encoding='utf-8') as f:  # atomic: an existing file means "started, maybe"
@@ -151,7 +151,7 @@ def call(job, approved):
         'agent_id': agent, 'agent_phone_number_id': number, 'to_number': job['to_number'],
         'call_recording_enabled': False,
         'conversation_initiation_client_data': {'dynamic_variables': {
-            'hub_call_brief': brief(job), 'caller_name': setting('CALLER_NAME', job['name'])}}})
+            'godspeed_call_brief': brief(job), 'caller_name': setting('CALLER_NAME', job['name'])}}})
     ledger.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
     return result
 

@@ -40,15 +40,15 @@ set `"mode": "rehearsal"` and `"to_number"` to your own number, and run on the s
 assistant's account:
 
 ```
-hub-phone submit order.json --authorization "rehearsal" --source "by hand"
-hub-phone wait <job_id>
+mc-phone submit order.json --authorization "rehearsal" --source "by hand"
+mc-phone wait <job_id>
 ```
 
 A rehearsal refuses every number but your own. That is deliberate.
 
 ## If the phone does not ring
 
-`hub-phone result <job_id>` shows what the provider said. The two causes the author met: the
+`mc-phone result <job_id>` shows what the provider said. The two causes the author met: the
 Twilio identity check was not yet approved (a `401` from the provider), and the two accounts
 were fine but the call ended after thirty seconds because nobody spoke. Neither is fixed by
 calling again; fix the cause, then queue a new order with a new `job_id`.

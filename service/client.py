@@ -1,12 +1,12 @@
-"""hub-phone: the one command the assistant uses. It talks to the service over its socket.
+"""mc-phone: the one command the assistant uses. It talks to the service over its socket.
 
-  hub-phone health                     is the service up, configured, and how many calls today
-  hub-phone prepare <order.json>       validate an order without calling
-  hub-phone submit  <order.json> --authorization "<the person's words>" --source "<assistant, chat>"
-  hub-phone wait    <job_id>           poll until finished (55 seconds at most per run)
-  hub-phone result  <job_id>           the outcome and the transcript
-  hub-phone list                       the last twenty jobs
-  hub-phone setup   agent|numbers|check   root only; see setup.py
+  mc-phone health                     is the service up, configured, and how many calls today
+  mc-phone prepare <order.json>       validate an order without calling
+  mc-phone submit  <order.json> --authorization "<the person's words>" --source "<assistant, chat>"
+  mc-phone wait    <job_id>           poll until finished (55 seconds at most per run)
+  mc-phone result  <job_id>           the outcome and the transcript
+  mc-phone list                       the last twenty jobs
+  mc-phone setup   agent|numbers|check   root only; see setup.py
 
 This runs on the server only. There is no laptop mode: whichever assistant places an order
 (Hermes through Telegram, or the desktop app connected to the server's gateway) runs here.
@@ -19,8 +19,8 @@ import socket
 import sys
 import time
 
-SOCKET_PATH = Path('/run/hub-phone-rpc.sock')
-CONFIG_DIR = Path('/etc/hub-phone')
+SOCKET_PATH = Path('/run/mc-phone-rpc.sock')
+CONFIG_DIR = Path('/etc/mc-phone')
 
 
 class PhoneTransportError(RuntimeError):
@@ -45,19 +45,19 @@ def unix_socket(request):
 def rpc(request):
     if not SOCKET_PATH.exists():
         raise PhoneTransportError(
-            'The order was NOT submitted: %s does not exist on this machine. hub-phone runs on the '
-            'server only; if this is the server, the socket unit is down: systemctl status hub-phone-rpc.socket'
+            'The order was NOT submitted: %s does not exist on this machine. mc-phone runs on the '
+            'server only; if this is the server, the socket unit is down: systemctl status mc-phone-rpc.socket'
             % SOCKET_PATH)
     try:
         raw = unix_socket(request)
     except PermissionError:
         raise PhoneTransportError(
-            'The order was NOT submitted: this account may not open %s. Only members of the hub-phone '
-            'group may; add one with: usermod -aG hub-phone <account>, then restart the service that '
+            'The order was NOT submitted: this account may not open %s. Only members of the mc-phone '
+            'group may; add one with: usermod -aG mc-phone <account>, then restart the service that '
             'runs the assistant so it picks up the group.' % SOCKET_PATH) from None
     except OSError as exc:
         raise PhoneTransportError('The order was NOT submitted: the socket answered "%s". Check: systemctl '
-                                  'status hub-phone-rpc.socket hub-phone' % exc) from None
+                                  'status mc-phone-rpc.socket mc-phone' % exc) from None
     try:
         out = json.loads(raw)
     except ValueError:
@@ -86,7 +86,7 @@ def is_root():
 
 def run_setup(args):
     if not is_root():
-        print(json.dumps({'error': 'hub-phone setup runs as root; it needs the key in /etc/hub-phone.'}))
+        print(json.dumps({'error': 'mc-phone setup runs as root; it needs the key in /etc/mc-phone.'}))
         return 1
     load_env(CONFIG_DIR / 'config.env')
     load_env(CONFIG_DIR / 'credentials.env')
@@ -100,7 +100,7 @@ def main():
     p.add_argument('command', choices=['health', 'prepare', 'submit', 'result', 'wait', 'list', 'setup'])
     p.add_argument('target', nargs='?')
     p.add_argument('--authorization', default='')
-    p.add_argument('--source', default='hub')
+    p.add_argument('--source', default='godspeed')
     p.add_argument('--seconds', type=int, default=45)
     p.add_argument('--write', action='store_true', help='setup agent: also record the agent id in config.env')
     a = p.parse_args()
@@ -109,7 +109,7 @@ def main():
     try:
         if a.command in ('prepare', 'submit'):
             if not a.target:
-                raise ValueError('Give the order file: hub-phone %s <order.json>' % a.command)
+                raise ValueError('Give the order file: mc-phone %s <order.json>' % a.command)
             job = json.loads(Path(a.target).read_text(encoding='utf-8'))
             # The fingerprint is computed here, from the file as it is, and the service recomputes
             # it from what arrived. They match only if nothing changed on the way.
@@ -120,7 +120,7 @@ def main():
             out = rpc({'action': a.command, 'body': body})
         elif a.command in ('result', 'wait'):
             if not a.target:
-                raise ValueError('Give the job id: hub-phone %s <job_id>' % a.command)
+                raise ValueError('Give the job id: mc-phone %s <job_id>' % a.command)
             end = time.monotonic() + min(55, max(0, a.seconds)) if a.command == 'wait' else 0
             while True:
                 out = rpc({'action': 'result', 'job_id': a.target})

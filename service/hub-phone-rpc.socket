@@ -1,10 +1,10 @@
 [Unit]
-Description=hub-phone RPC socket (group-owned, so the assistant's sandboxed account can reach it without sudo)
+Description=mc-phone RPC socket (group-owned, so the assistant's sandboxed account can reach it without sudo)
 
 [Socket]
-ListenStream=/run/hub-phone-rpc.sock
+ListenStream=/run/mc-phone-rpc.sock
 SocketUser=root
-SocketGroup=hub-phone
+SocketGroup=mc-phone
 SocketMode=0660
 Accept=yes
 

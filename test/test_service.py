@@ -127,7 +127,7 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(dial.call_count, 1)
 
     def test_daily_limit_refuses_the_next_order(self):
-        with patch.dict(os.environ, {'HUB_PHONE_DAILY_LIMIT': '1'}):
+        with patch.dict(os.environ, {'GODSPEED_PHONE_DAILY_LIMIT': '1'}):
             self.submit()
             with patch.object(service.phone, 'call', return_value={'conversation_id': 'conv_a'}):
                 service.tick()

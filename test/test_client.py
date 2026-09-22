@@ -11,7 +11,7 @@ import client
 
 class TransportTests(unittest.TestCase):
     def test_missing_socket_says_the_order_was_not_submitted(self):
-        with patch.object(client, 'SOCKET_PATH', Path('/nonexistent/hub-phone.sock')):
+        with patch.object(client, 'SOCKET_PATH', Path('/nonexistent/mc-phone.sock')):
             with self.assertRaisesRegex(client.PhoneTransportError, 'NOT submitted.*does not exist') as caught:
                 client.rpc({'action': 'health'})
         self.assertIn('server only', str(caught.exception))
@@ -19,7 +19,7 @@ class TransportTests(unittest.TestCase):
     def test_permission_refusal_names_the_group(self):
         with patch.object(client.SOCKET_PATH.__class__, 'exists', return_value=True), \
              patch.object(client, 'unix_socket', side_effect=PermissionError(13, 'denied')):
-            with self.assertRaisesRegex(client.PhoneTransportError, 'hub-phone group'):
+            with self.assertRaisesRegex(client.PhoneTransportError, 'mc-phone group'):
                 client.rpc({'action': 'health'})
 
     def test_service_refusal_is_final_and_verbatim(self):
@@ -38,7 +38,7 @@ class TransportTests(unittest.TestCase):
 class CommandTests(unittest.TestCase):
     def run_main(self, *argv):
         out = []
-        with patch.object(sys, 'argv', ['hub-phone', *argv]), patch('builtins.print', side_effect=lambda s, **k: out.append(s)):
+        with patch.object(sys, 'argv', ['mc-phone', *argv]), patch('builtins.print', side_effect=lambda s, **k: out.append(s)):
             code = client.main()
         return code, json.loads(out[-1])
 
