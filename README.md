@@ -1,6 +1,6 @@
 # mc-phone
 
-**Let your mission control make a phone call for you.** An add-on for the [always-on server](https://github.com/MichaelZelbel/teach-it-once-kit) from
+**Let your mission control make a phone call for you.** An add-on for the [always-on server](https://github.com/MichaelZelbel/godspeed-mission-control) from
 [*Teach It Once*](https://leanpub.com/teachitonce), Chapter 32. You tell your assistant "call the restaurant and book a table
 for two on Friday at seven"; a voice agent makes the call as *the AI assistant of you*, and
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
