@@ -6,7 +6,9 @@ for two on Friday at seven"; a voice agent makes the call as *the AI assistant o
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
 declined, not reached, unclear.
 
-This is for some people, not most. It works: the author booked a real table with it. It
+The book explains the whole mission control this plugs into, step by step: [*Teach It Once* on Leanpub](https://leanpub.com/teachitonce) (free sample on the page). I also write about what my AI does for me and what I will not let it do, in a free newsletter: [subscribe on Substack](https://michaelzelbel.substack.com/subscribe).
+
+This is for some people, not most. It works: in [the video](https://www.youtube.com/watch?v=ILQaUgof_48) the author plays the restaurant and it books the table. It
 also needs two paid accounts, an identity check, and a server. If a phone call is not the
 thing you put off, you do not need this folder.
 
