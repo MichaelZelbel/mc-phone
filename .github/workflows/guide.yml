@@ -1,0 +1,20 @@
+name: guide
+# Names the pages of the user guide that may describe what changed here and are not marked as
+# reviewed (.github/guide-map.json says which paths each page describes). No AI and no secrets.
+# How to clear it: the log of the last step prints the commands, and AGENTS.md says the rest.
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  guide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The whole history, but no file contents beyond the checkout: the check needs commits and
+      # trees only.
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0, filter: 'blob:none', persist-credentials: false }
+      - name: The check works
+        run: node .github/guide-check.mjs --self-test
+      - name: Guide pages to review
+        run: node .github/guide-check.mjs
