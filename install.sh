@@ -85,11 +85,15 @@ home_of() { getent passwd "$1" 2>/dev/null | cut -d: -f6; }
 # previous edition's server, account `ai`; else the account that started sudo. A folder not given is
 # the one the kit recorded for that account, else godspeed-v2 (this edition), else godspeed.
 settle_target() {   # $1: the folder this file is in, if any
-  local here="${1:-}" home recorded d
-  [ -n "$GODSPEED" ] || GODSPEED="$(bundled_godspeed "$here" || true)"
+  local here="${1:-}" home recorded d bundled=""
+  if [ -z "$GODSPEED" ]; then GODSPEED="$(bundled_godspeed "$here" || true)"; [ -z "$GODSPEED" ] || bundled=1; fi
   if [ -z "$AI_USER" ] && [ -n "$GODSPEED" ] && [ -d "$GODSPEED" ]; then
     AI_USER="$(stat -c %U "$GODSPEED" 2>/dev/null || true)"
-    if [ "$AI_USER" = root ] || [ "$AI_USER" = UNKNOWN ]; then AI_USER=""; fi
+    # Root is the assistant's account only where the Linux installer itself ran as root: its notebook
+    # and assistant then run as root (install-native-notebook.sh says so when it installs), and a
+    # server rented with only a root login is set up that way. Any other folder root owns is not the
+    # assistant's own, as on the previous edition's server, where the assistant was `ai`.
+    if [ "$AI_USER" = UNKNOWN ] || { [ "$AI_USER" = root ] && [ -z "$bundled" ]; }; then AI_USER=""; fi
   fi
   if [ -z "$AI_USER" ] && id ai >/dev/null 2>&1; then AI_USER=ai; fi
   if [ -z "$AI_USER" ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then AI_USER="$SUDO_USER"; fi
