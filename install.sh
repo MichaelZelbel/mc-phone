@@ -2,10 +2,17 @@
 # =============================================================================
 # mc-phone: let your mission control make a phone call for you.
 #
-# An add-on for a server set up with the kit's own server installer (Chapter 35 of "Teach It Once"). Logged in as root
-# on that server, paste this one line:
-#
-#   curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/mc-phone/main/install.sh | bash
+# An add-on (Chapter 35 of "Teach It Once") for a machine with Linux and systemd where the mission
+# control and its assistant run on the machine itself:
+#   - a Linux computer or server installed with Godspeed Mission Control's Linux installer. Its
+#     copy of this add-on comes with it; run that copy as root:
+#       RUNTIME="$HOME/godspeed-v2/.godspeed/integrated-runtime"
+#       sudo bash "$RUNTIME/versions/$(cat "$RUNTIME/version")/third-party/addons/mc-phone/install.sh"
+#   - a server set up with the previous edition's server installer (account `ai`). As root:
+#       curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/mc-phone/main/install.sh | bash
+# Not a Mac, not Windows (no systemd), and not the one-line server, whose mission control runs in a
+# container this add-on cannot reach yet. Nothing it needs comes in from outside: calls are started
+# and read back over the internet, so no public address or open port is needed.
 #
 # It is safe to run twice: a second run updates the code and the agent's prompt
 # and keeps your settings. Nothing here deletes anything, and nothing here dials
@@ -15,9 +22,9 @@
 #   - puts the worker and the command on the machine (/opt/mc-phone,
 #     /usr/local/bin/mc-phone) and the worker on the machine's own clock as a
 #     system service that starts with the machine
-#   - opens one socket for orders that only members of the mc-phone group may
-#     use, and puts your assistant's account in that group; the account stays
-#     sandboxed and never escalates
+#   - opens one socket for orders that only your assistant's account and members
+#     of the mc-phone group may use, and puts that account in the group; the
+#     account stays sandboxed and never escalates
 #   - creates the "Godspeed phone" agent in your ElevenLabs workspace from the prompt
 #     this version ships, or brings an existing one up to date
 #   - picks the phone number you imported into ElevenLabs
@@ -46,10 +53,69 @@ KB_PIN="v2.7"
 LIB_URL="https://raw.githubusercontent.com/MichaelZelbel/kit-bootstrap/$KB_PIN/lib.sh"
 HP_TARBALL="${HP_TARBALL:-https://github.com/MichaelZelbel/mc-phone/archive/refs/heads/main.tar.gz}"
 HP_SRC="${HP_SRC:-}"          # a local checkout, for tests and for running from a clone
-AI_USER="${AI_USER:-ai}"
-GODSPEED="${GODSPEED:-}"                # settled below: the assistant's home + /godspeed unless told otherwise
+AI_USER="${AI_USER:-}"        # the account the assistant runs as; settled below unless given
+GODSPEED="${GODSPEED:-}"      # the mission control folder; settled below unless given
 CONF=/etc/mc-phone/config.env
 CRED=/etc/mc-phone/credentials.env
+
+# --- Which copy, which mission control, which account ---------------------------
+# The folder this file is in, when it runs from a file (the copy that comes with Godspeed Mission
+# Control, or a clone) rather than from curl: its service/ is then the code to install.
+script_dir() {
+  local src="${BASH_SOURCE[0]:-}"
+  [ -n "$src" ] && [ -f "$src" ] || return 1
+  (cd "$(dirname "$src")" && pwd -P)
+}
+
+# The Linux installer keeps each version of the product, this add-on included, in
+# <mission control>/.godspeed/integrated-runtime/versions/<version>/, so the copy that comes with it
+# knows its own mission control.
+bundled_godspeed() {   # $1: the folder this file is in -> the mission control folder
+  local dir="${1:-}" root
+  case "$dir" in */.godspeed/integrated-runtime/versions/*/third-party/addons/mc-phone) ;; *) return 1 ;; esac
+  root="${dir%%/.godspeed/integrated-runtime/versions/*}"
+  [ -f "$root/AGENTS.md" ] || return 1
+  printf '%s' "$root"
+}
+
+home_of() { getent passwd "$1" 2>/dev/null | cut -d: -f6; }
+
+# What GODSPEED and AI_USER say wins. Otherwise: the mission control this copy came with and the
+# account that owns its folder (the Linux installer runs the assistant as that account); else the
+# previous edition's server, account `ai`; else the account that started sudo. A folder not given is
+# the one the kit recorded for that account, else godspeed-v2 (this edition), else godspeed.
+settle_target() {   # $1: the folder this file is in, if any
+  local here="${1:-}" home recorded d
+  [ -n "$GODSPEED" ] || GODSPEED="$(bundled_godspeed "$here" || true)"
+  if [ -z "$AI_USER" ] && [ -n "$GODSPEED" ] && [ -d "$GODSPEED" ]; then
+    AI_USER="$(stat -c %U "$GODSPEED" 2>/dev/null || true)"
+    if [ "$AI_USER" = root ] || [ "$AI_USER" = UNKNOWN ]; then AI_USER=""; fi
+  fi
+  if [ -z "$AI_USER" ] && id ai >/dev/null 2>&1; then AI_USER=ai; fi
+  if [ -z "$AI_USER" ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then AI_USER="$SUDO_USER"; fi
+  if [ -z "$GODSPEED" ] && [ -n "$AI_USER" ]; then
+    home="$(home_of "$AI_USER")"
+    [ -n "$home" ] || return 0
+    recorded="$(sed -n 's/^[[:space:]]*GODSPEED_DIR=//p' "$home/.godspeed/device.env" 2>/dev/null | tail -1 | tr -d "\"'")"
+    for d in "$recorded" "$home/godspeed-v2" "$home/godspeed"; do
+      if [ -n "$d" ] && [ -f "$d/AGENTS.md" ]; then GODSPEED="$d"; return 0; fi
+    done
+  fi
+  return 0
+}
+
+# On the one-line server the mission control lives in a Docker container. Said so by name rather
+# than as "no folder found", because nothing the person can type here changes it.
+in_container_server() {
+  command -v docker >/dev/null 2>&1 || return 1
+  docker ps --format '{{.Names}}' 2>/dev/null | grep -qi godspeed
+}
+
+HERE="$(script_dir || true)"
+if [ -z "$HP_SRC" ] && [ -n "$HERE" ] && [ -f "$HERE/service/service.py" ]; then HP_SRC="$HERE"; fi
+settle_target "$HERE"
+# Lets a test check the decisions above without installing anything.
+if [ "${MC_PHONE_INSTALLER_FUNCTIONS_ONLY:-}" = 1 ]; then return 0 2>/dev/null || exit 0; fi
 
 # --- The shared groundwork ----------------------------------------------------
 if ! LIB="$(curl -fsSL "$LIB_URL")" || [ -z "$LIB" ]; then
@@ -61,9 +127,20 @@ fi
 eval "$LIB"
 unset LIB
 
-kb_is_root || die "Run this as root on your server."
-command -v systemctl >/dev/null 2>&1 || die "This needs systemd, which every Ubuntu server has. This machine does not."
+kb_is_root || die "Run this as root: put sudo in front of the line."
+[ "$(uname -s)" = Linux ] && command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ] \
+  || die "mc-phone needs Linux with systemd: a Linux computer or server. It cannot run on this machine, nor on a Mac or Windows. Your assistant can still prepare a call for you to make yourself."
 need_tools python3 curl tar
+if [ -z "$GODSPEED" ] || [ ! -f "$GODSPEED/AGENTS.md" ]; then
+  if in_container_server; then
+    die "Your mission control runs inside a container on this server (the one-line server), and mc-phone cannot reach it there yet. Nothing was installed. Your assistant can still prepare a call for you to make yourself."
+  fi
+  die "Found no mission control folder${GODSPEED:+ at $GODSPEED}${AI_USER:+ for the account $AI_USER}. Nothing was installed. Run this again with the folder named: GODSPEED=/path/to/your/folder in front of bash."
+fi
+id "$AI_USER" >/dev/null 2>&1 \
+  || die "Could not tell which account your assistant runs as. Nothing was installed. Run this again with AI_USER=<that account> in front of bash."
+AI_GROUP="$(id -gn "$AI_USER")"
+ok "mission control $GODSPEED, assistant's account $AI_USER"
 
 # --- Hidden input for the key ------------------------------------------------
 # lib.sh's ask() echoes what you type. A key must not be echoed or land in a log.
@@ -164,35 +241,26 @@ ok "settings in $CONF"
 # --- 3. The service -------------------------------------------------------------
 say "The service"
 getent group mc-phone >/dev/null || groupadd --system mc-phone
-JOINED=no
-if id "$AI_USER" >/dev/null 2>&1; then
-  if ! id -nG "$AI_USER" | tr ' ' '\n' | grep -qx mc-phone; then
-    usermod -aG mc-phone "$AI_USER"
-    JOINED=yes
-  fi
-  ok "account $AI_USER may place orders (member of mc-phone)"
-else
-  warn "there is no account called $AI_USER on this machine. The service is installed, but no
-     account may place an order yet. Add one with: usermod -aG mc-phone <account>"
+if ! id -nG "$AI_USER" | tr ' ' '\n' | grep -qx mc-phone; then
+  usermod -aG mc-phone "$AI_USER"
 fi
 for unit in mc-phone.service mc-phone-rpc.socket mc-phone-rpc@.service; do
   install -m 644 "$SRC/service/$unit" "/etc/systemd/system/$unit"
 done
+# The assistant's account owns the socket, so it may place orders at once. A process keeps the
+# groups it STARTED with, and on the Linux installer's machines the assistant can run under
+# processes that started before the account joined mc-phone (the account's own systemd keeps them
+# until the machine restarts). Other accounts still get in through the group.
+install -d -m 755 /etc/systemd/system/mc-phone-rpc.socket.d
+printf '[Socket]\nSocketUser=%s\n' "$AI_USER" > /etc/systemd/system/mc-phone-rpc.socket.d/assistant.conf
+chmod 644 /etc/systemd/system/mc-phone-rpc.socket.d/assistant.conf
 systemctl daemon-reload
-systemctl enable --now mc-phone-rpc.socket >/dev/null 2>&1 || die "The socket unit did not start: systemctl status mc-phone-rpc.socket"
+systemctl enable mc-phone-rpc.socket >/dev/null 2>&1
+systemctl restart mc-phone-rpc.socket || die "The socket unit did not start: systemctl status mc-phone-rpc.socket"
+ok "account $AI_USER may place orders (the socket is its own; members of mc-phone may too)"
 systemctl enable mc-phone.service >/dev/null 2>&1
 systemctl restart mc-phone.service || die "The worker did not start: journalctl -u mc-phone -n 20"
 ok "worker running as a system service; socket open at /run/mc-phone-rpc.sock"
-
-# A process carries the groups it had when it STARTED. If the assistant's gateway
-# was already running, it cannot open the socket until it restarts.
-if [ "$JOINED" = yes ]; then
-  for gw in hermes-gateway hermes-gateway-godspeed; do
-    if systemctl is-active --quiet "$gw.service" 2>/dev/null; then
-      systemctl restart "$gw.service" && ok "$AI_USER joined mc-phone; restarted $gw so it carries the new group"
-    fi
-  done
-fi
 
 # --- 4. The agent and the number ---------------------------------------------
 say "The agent in your ElevenLabs workspace"
@@ -224,25 +292,19 @@ fi
 systemctl restart mc-phone.service   # the worker reads config.env at start
 
 # --- 5. The recipe in your mission control --------------------------------------------------
+# A mission control from the Linux installer already has this recipe, the same text: every
+# mission control gets it, and where this add-on is missing it says so and offers to prepare the
+# call instead. Copying it here as well serves the previous edition's server, which never had it.
 say "The recipe in your mission control"
-if id "$AI_USER" >/dev/null 2>&1; then
-  AI_HOME="$(getent passwd "$AI_USER" | cut -d: -f6)"
-  GODSPEED="${GODSPEED:-$AI_HOME/godspeed}"
+ROOM="$(kb_skills_room "$GODSPEED")"
+install -d -m 755 "$ROOM/phone-errands/templates"
+install -m 644 "$SRC/skill/phone-errands/SKILL.md" "$ROOM/phone-errands/SKILL.md"
+install -m 644 "$SRC/skill/phone-errands/templates/reservation-order.json" "$ROOM/phone-errands/templates/reservation-order.json"
+chown -R "$AI_USER":"$AI_GROUP" "$ROOM/phone-errands"
+if [ -d "$GODSPEED/.git" ]; then
+  su - "$AI_USER" -c "cd '$GODSPEED' && git add -- '$ROOM/phone-errands' 2>/dev/null && git -c user.name='mc-phone' -c user.email='mc-phone@localhost' commit -q -m 'Add the phone-errands recipe (mc-phone)' -- '$ROOM/phone-errands' >/dev/null 2>&1" || true
 fi
-if [ -n "$GODSPEED" ] && [ -d "$GODSPEED" ]; then
-  ROOM="$(kb_skills_room "$GODSPEED")"
-  install -d -m 755 "$ROOM/phone-errands/templates"
-  install -m 644 "$SRC/skill/phone-errands/SKILL.md" "$ROOM/phone-errands/SKILL.md"
-  install -m 644 "$SRC/skill/phone-errands/templates/reservation-order.json" "$ROOM/phone-errands/templates/reservation-order.json"
-  chown -R "$AI_USER":"$AI_USER" "$ROOM/phone-errands"
-  if [ -d "$GODSPEED/.git" ]; then
-    su - "$AI_USER" -c "cd '$GODSPEED' && git add skills/phone-errands 2>/dev/null; git add '$ROOM/phone-errands' 2>/dev/null; git -c user.name='mc-phone' -c user.email='mc-phone@localhost' commit -q -m 'Add the phone-errands recipe (mc-phone)' >/dev/null 2>&1" || true
-  fi
-  ok "phone-errands recipe in $ROOM/phone-errands (your assistant reads that room)"
-else
-  warn "no mission control folder found at ${GODSPEED:-<unknown>}. Copy skill/phone-errands/ into your mission control's skills room by hand,
-     or run again with GODSPEED=/path/to/godspeed."
-fi
+ok "phone-errands recipe in $ROOM/phone-errands (your assistant reads that room)"
 
 # --- 6. Prove the assistant's path ---------------------------------------------
 say "Proof"
@@ -299,5 +361,5 @@ fi
 
 rm -rf "$WORK"
 echo
-log "Done. Tell your assistant, in Telegram or the desktop app: \"Call +49... and reserve a table for two on Friday at 19:00.\""
+log "Done. Tell your assistant, in the notebook's chat or in Telegram: \"Call +49... and reserve a table for two on Friday at 19:00.\""
 log "It reads the phone-errands recipe, places the order, and reports confirmed, declined, not reached, or unclear."

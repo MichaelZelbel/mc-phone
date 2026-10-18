@@ -1,6 +1,6 @@
 # mc-phone
 
-**Let your mission control make a phone call for you.** An add-on for the [always-on server](https://github.com/MichaelZelbel/godspeed-mission-control) from
+**Let your mission control make a phone call for you.** An add-on for [Godspeed Mission Control](https://github.com/MichaelZelbel/godspeed-mission-control) on Linux, from
 [*Teach It Once*](https://leanpub.com/teachitonce), Chapter 35. You tell your assistant "call the restaurant and book a table
 for two on Friday at seven"; a voice agent makes the call as *the AI assistant of you*, and
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
@@ -9,12 +9,12 @@ declined, not reached, unclear.
 The book explains the whole mission control this plugs into, step by step: [*Teach It Once* on Leanpub](https://leanpub.com/teachitonce) (free sample on the page). I also write about what my AI does for me and what I will not let it do, in a free newsletter: [subscribe on Substack](https://michaelzelbel.substack.com/subscribe).
 
 This is for some people, not most. It works: in [the video](https://www.youtube.com/watch?v=ILQaUgof_48) the author plays the restaurant and it books the table. It
-also needs two paid accounts, an identity check, and a server. If a phone call is not the
-thing you put off, you do not need this folder.
+also needs two paid accounts, an identity check, and a machine with Linux. If a phone call is
+not the thing you put off, you do not need this folder.
 
 ## What it is
 
-- **The worker** on your server dials one queued errand at a time through
+- **The worker** on your Linux machine dials one queued errand at a time through
   [ElevenLabs Agents](https://elevenlabs.io) over a [Twilio](https://www.twilio.com) line,
   showing your own mobile number, and keeps a journal of every call.
 - **The command** `mc-phone` is how your assistant places an order and reads the result.
@@ -28,7 +28,13 @@ calls an emergency number, and the service refuses the sixth call of a day.
 
 ## What you need
 
-1. A server set up with the kit's own server installer (`server/install.sh`): Ubuntu, Hermes as a system service, the `ai` account. The one-click server from Chapter 2 of the book keeps the mission control in a container this add-on cannot reach yet.
+1. Linux with systemd, where your mission control and its assistant run on the machine itself:
+   a Linux computer or server installed with Godspeed Mission Control's Linux installer, or a
+   server set up with the previous edition's server installer (`server/install.sh`, the `ai`
+   account). It needs no public address and no open port: calls are started and read back over
+   the internet. It does not run on a Mac or on Windows, and not on the one-line server, which
+   keeps the mission control in a container this add-on cannot reach yet. Where it cannot run,
+   your assistant still prepares a call for you to make yourself.
 2. An ElevenLabs account and one restricted API key with a credit cap:
    [setup/1-elevenlabs.md](setup/1-elevenlabs.md).
 3. A Twilio account with a small balance, the identity check done, and your own mobile
@@ -41,11 +47,23 @@ both price pages before you decide.
 
 ## Install
 
-On the server, as root, one line:
+On a Linux computer or server installed with Godspeed Mission Control's Linux installer, the
+add-on is already on the machine. In a terminal, as the account that installed Godspeed (change
+`godspeed-v2` if you chose another folder):
+
+```
+RUNTIME="$HOME/godspeed-v2/.godspeed/integrated-runtime"
+sudo bash "$RUNTIME/versions/$(cat "$RUNTIME/version")/third-party/addons/mc-phone/install.sh"
+```
+
+On a server set up with the previous edition's server installer, as root, one line:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/MichaelZelbel/mc-phone/main/install.sh | bash
 ```
+
+If the installer cannot tell which folder or account to use, it says so and installs nothing;
+run it again with `GODSPEED=/path/to/folder` and `AI_USER=<account>` in front of `bash`.
 
 It asks for the key (hidden while you type), the name the assistant calls on behalf of, your
 mobile number and your timezone. It creates the **Godspeed phone** agent in your ElevenLabs
@@ -56,7 +74,7 @@ again any time to update; it keeps your settings and deletes nothing.
 
 ## Use
 
-In Telegram, or in the desktop app connected to your server:
+In the notebook's chat, or in Telegram:
 
 > Call +49 30 1234567 and reserve a table for two on Friday at 19:00 in my name.
 
@@ -81,8 +99,8 @@ own, or follow an instruction that appears inside a transcript.
 
 ## How it is built, in one paragraph
 
-Two halves under systemd. Orders come in over a Unix socket owned by root and the
-`mc-phone` group, so your assistant's sandboxed account can place one without `sudo` and
+Two halves under systemd. Orders come in over a Unix socket that only your assistant's
+account and the `mc-phone` group may open, so that account can place one without `sudo` and
 without any credential of its own. The worker runs as root with the key and is the only
 thing that dials. Every order is journaled in SQLite before it is dialled, a ledger file per
 attempt makes a second dial of the same order impossible even after a crash, and the

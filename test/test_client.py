@@ -14,7 +14,7 @@ class TransportTests(unittest.TestCase):
         with patch.object(client, 'SOCKET_PATH', Path('/nonexistent/mc-phone.sock')):
             with self.assertRaisesRegex(client.PhoneTransportError, 'NOT submitted.*does not exist') as caught:
                 client.rpc({'action': 'health'})
-        self.assertIn('server only', str(caught.exception))
+        self.assertIn('only where mc-phone was set up, on a Linux computer or server', str(caught.exception))
 
     def test_permission_refusal_names_the_group(self):
         with patch.object(client.SOCKET_PATH.__class__, 'exists', return_value=True), \

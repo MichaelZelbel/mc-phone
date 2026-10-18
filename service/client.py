@@ -8,8 +8,9 @@
   mc-phone list                       the last twenty jobs
   mc-phone setup   agent|numbers|check   root only; see setup.py
 
-This runs on the server only. There is no laptop mode: whichever assistant places an order
-(Hermes through Telegram, or the desktop app connected to the server's gateway) runs here.
+This runs where the service was set up: a Linux computer or server with systemd, the same machine
+the assistant that places the order runs on. There is no Mac or Windows mode, and on the one-line
+server the assistant runs in a container that cannot reach the service yet.
 """
 import argparse
 import json
@@ -45,15 +46,17 @@ def unix_socket(request):
 def rpc(request):
     if not SOCKET_PATH.exists():
         raise PhoneTransportError(
-            'The order was NOT submitted: %s does not exist on this machine. mc-phone runs on the '
-            'server only; if this is the server, the socket unit is down: systemctl status mc-phone-rpc.socket'
+            'The order was NOT submitted: %s does not exist on this machine. Calls can be made only '
+            'where mc-phone was set up, on a Linux computer or server; if it was set up here, the socket '
+            'unit is down: systemctl status mc-phone-rpc.socket'
             % SOCKET_PATH)
     try:
         raw = unix_socket(request)
     except PermissionError:
         raise PhoneTransportError(
-            'The order was NOT submitted: this account may not open %s. Only members of the mc-phone '
-            'group may; add one with: usermod -aG mc-phone <account>, then restart the service that '
+            'The order was NOT submitted: this account may not open %s. Only the account the setup '
+            'named and members of the mc-phone group may; run the setup again with AI_USER=<this '
+            'account>, or add it with: usermod -aG mc-phone <account> and restart the service that '
             'runs the assistant so it picks up the group.' % SOCKET_PATH) from None
     except OSError as exc:
         raise PhoneTransportError('The order was NOT submitted: the socket answered "%s". Check: systemctl '

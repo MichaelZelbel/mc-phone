@@ -1,19 +1,47 @@
 ---
 name: phone-errands
-description: Use when the person asks you to make a phone call for them ("call the restaurant and book a table for two on Friday at seven", "ring the workshop and ask if the bike is ready"). Places one order with the server's mc-phone service, waits, reads the transcript, and reports one of four verdicts. Never calls without being told to, never calls twice on its own.
+description: Use when the person asks you to make a phone call for them ("call the restaurant and book a table for two on Friday at seven", "ring the workshop and ask if the bike is ready"). Where the mc-phone add-on is set up (a Linux computer or server), places one call through it, reads the transcript, and reports one of four verdicts. Everywhere else, says plainly that calls cannot be made from here and prepares the call for the person to make. Never calls without being told to, never calls twice on its own.
 ---
 
 # Phone errands
 
-This mission control's server has a phone service. You give it an order file, it makes one call as the
-AI assistant of the person whose mission control this is, and it hands you back the transcript. You are
+Some mission controls can make a phone call: the mc-phone add-on makes one call as the AI
+assistant of the person whose mission control this is, and hands you back the transcript. You are
 the one who reads that transcript and says what happened. The service never says "booked";
 only the other party's own words can.
 
-Everything runs through one command on the server, `mc-phone`. There is no setup to do per
-conversation and no key to find; the key lives with the service.
+## First, can calls be made from here?
+
+Run `mc-phone health` before anything else, every time.
+
+- **The command is not found, or it says the order was NOT submitted because a socket does not
+  exist:** calls cannot be made from here. The add-on runs only on a Linux computer or server where
+  it was set up, so not on Windows, not on a Mac, and not on the one-line server. Say so in one
+  plain sentence, for example: "I can't make phone calls from here, but I can get the call ready
+  for you." Then go to **Prepare the call instead**. Do not look for another way to dial.
+- **It answers, but `configured` is false:** the add-on is installed and its setup is not
+  finished (the voice agent or the phone number is missing). Say so plainly, say that running
+  its setup again finishes it, and offer to prepare the call instead.
+- **It answers with `"configured": true`:** go on with **Build the order**.
+
+## Prepare the call instead
+
+When no call can go out, the person makes it. Make that easy, in a few short lines they can read
+from while they talk:
+
+- who to call, and the number if they gave one or it is in their own files (never invent one)
+- the first sentence to say, with their name and what they want
+- the facts the other side will ask for: day, time, how many people, the name to book under
+- what they may accept instead, and what they will not agree to
+- one or two questions to ask before hanging up, if the errand needs them
+
+Then ask them to tell you how it went, and keep what was agreed where it belongs (a note, a
+deadline, their calendar if you can reach it). Never say or suggest that a call took place.
 
 ## Build the order
+
+Everything runs through one command, `mc-phone`. There is no setup to do per conversation and
+no key to find; the key lives with the service.
 
 Start from `templates/reservation-order.json` in this folder and write a new file, for
 example under `/tmp/`:
@@ -51,7 +79,7 @@ until `status` is `finished`. Closing the chat cancels nothing; `mc-phone list` 
 find the job later.
 
 If `submit` fails with "The order was NOT submitted", read the message: it names the reason
-(the socket is missing, this account is not in the `mc-phone` group, the service is down).
+(the socket is missing, this account may not open it, the service is down).
 Say that to the person. Never say a call is coming when nothing was queued.
 
 ## Read the result and report
