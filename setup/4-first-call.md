@@ -36,7 +36,7 @@ instruction to judge it rather than trust the word "done".
 ## Later, by hand
 
 A rehearsal can be repeated any time. Copy `skill/phone-errands/templates/reservation-order.json`,
-set `"mode": "rehearsal"` and `"to_number"` to your own number, and run on the server as your
+set `"mode": "rehearsal"` and `"to_number"` to your own number, and run on the machine as your
 assistant's account:
 
 ```

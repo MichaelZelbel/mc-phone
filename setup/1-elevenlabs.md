@@ -1,7 +1,7 @@
 # 1. ElevenLabs: the voice, and a key with a cap
 
 ElevenLabs runs the voice agent: it listens, thinks with a language model, and speaks. You
-need an account, and one API key that the server keeps.
+need an account, and one API key that your Linux machine keeps.
 
 These steps were checked on the ElevenLabs web app in September 2026. Screens change; if a
 button is not where this page says, look for the same words nearby, or ask your assistant to
@@ -32,11 +32,11 @@ Make a key that can do only what this add-on needs.
 4. Set a **credit limit** per billing period. The author uses 3,000. That is the most this
    key can spend if something goes wrong.
 5. Switch on the option that disables the key automatically if it is found in public.
-6. Copy the key. You will paste it once, into the installer, which stores it on the server in
+6. Copy the key. You will paste it once, into the installer, which stores it on the machine in
    a file only root can read. Do not put it in your mission control folder, a note, or a chat.
 
 If you lose the key, make a new one here and delete the old one; then delete
-`/etc/mc-phone/credentials.env` on the server and run the installer again.
+`/etc/mc-phone/credentials.env` on the machine and run the installer again.
 
 ## What ElevenLabs keeps
 
