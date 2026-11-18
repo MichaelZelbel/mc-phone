@@ -2,7 +2,7 @@
 # =============================================================================
 # mc-phone: let your mission control make a phone call for you.
 #
-# An add-on (Chapter 35 of "Teach It Once") for a machine with Linux and systemd where the mission
+# An add-on (Chapter 36 of "Teach It Once") for a machine with Linux and systemd where the mission
 # control and its assistant run on the machine itself:
 #   - a Linux computer or server installed with Godspeed Mission Control's Linux installer. Its
 #     copy of this add-on comes with it; run that copy as root:

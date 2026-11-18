@@ -1,7 +1,7 @@
 # mc-phone
 
 **Let your mission control make a phone call for you.** An add-on for [Godspeed Mission Control](https://github.com/MichaelZelbel/godspeed-mission-control) on Linux, from
-[*Teach It Once*](https://leanpub.com/teachitonce), Chapter 35. You tell your assistant "call the restaurant and book a table
+[*Teach It Once*](https://leanpub.com/teachitonce), Chapter 36. You tell your assistant "call the restaurant and book a table
 for two on Friday at seven"; a voice agent makes the call as *the AI assistant of you*, and
 your assistant reads the transcript back to you with one of four verdicts: confirmed,
 declined, not reached, unclear.
@@ -111,6 +111,6 @@ confirm anything.
 
 This is the phone service of the author's own mission control, with his name, number, ids and German
 prompt taken out and an English prompt put in that introduces itself as an assistant. The
-whole story is in *Teach It Once*, Chapter 35.
+whole story is in *Teach It Once*, Chapter 36.
 
 MIT. Use it, change it, share it.
